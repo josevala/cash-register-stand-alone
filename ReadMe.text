@@ -1,0 +1,2 @@
+//transactions will be referring to a table called transaction items where transactions items will connect to product id
+and transaction id will connect to transaction id
