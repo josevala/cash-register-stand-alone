@@ -14,7 +14,5 @@ public interface TransactionsDao {
    List<Transaction> getTransactionsByTotal(BigDecimal total);
    List<Transaction> getTransactionsByDate(Date date);
    Transaction newTransaction(Transaction transaction);
-   TransactionItem addTransactionItems();
-   Transaction updateTransaction(Transaction transaction);
    int  deleteTransactionById(int id);
 }

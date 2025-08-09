@@ -19,7 +19,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
-import static com.cashregister.services.JdbcProduct.mapRowToProduct;
+
 
 @Component
 public class JdbcTransaction implements TransactionsDao {
@@ -102,20 +102,52 @@ public class JdbcTransaction implements TransactionsDao {
     @Override
     public Transaction newTransaction(Transaction transaction){
      Transaction transaction1 = new Transaction();
-     String sqlTransactions = "INSERT INTO transactions VALUES (?, ?, ?);";
-     String sqlTransItem = "INSERT INTO transaction_items VALUES (?, ?, ?);";
+     String sqlTransactions = "INSERT INTO transactions( transaction_total, transaction_date ) VALUES (?, ?) RETURNING transaction_id;";
+        try{
+            int newTransactionId = jdbcTemplate.queryForObject(sqlTransactions, int.class, transaction.getTransactionTotal(), transaction.getTransactionDate());
+            HashMap<TransactionItem, Double > map = transaction.getTransactProducts();
+            for (TransactionItem transactionItem : map.keySet()) {
+                transactionItem.setTransactionId(newTransactionId);
+                addTransactionItem(transactionItem);
+            }
+            transaction1 = getTransactionById(newTransactionId);
 
+
+        }catch (DataIntegrityViolationException e){
+            throw new DaoException("Data Integrity Violation");
+        }catch (CannotGetJdbcConnectionException e){
+            throw new DaoException("Unable to connect to server");
+        }
      return transaction1;
     }
-
-    @Override
-    public Transaction updateTransaction(Transaction transaction) {
-        return null;
+    public void  addTransactionItem(TransactionItem transactionItem){
+        String sqlTransactionItems = "INSERT INTO transaction_item ( id, product_sku, quantity ) VALUES (?, ?, ?);";
+         try{
+             jdbcTemplate.update(sqlTransactionItems, transactionItem.getTransactionId(), transactionItem.getSku(), transactionItem.getQuantity());
+         }catch (DataIntegrityViolationException e){
+             throw new DaoException("Data Integrity Violation");
+         }catch (CannotGetJdbcConnectionException e){
+             throw new DaoException("Unable to connect to server");
+         }
     }
 
     @Override
     public int deleteTransactionById(int id) {
-        return 0;
+        int rowsAffected = 0;
+        String sqlTransaction = "DELETE FROM transactions WHERE transaction_id = ?;";
+        String  sqlTransactionItems = "DELETE FROM transaction_item WHERE id = ?;";
+        try{
+            jdbcTemplate.update(sqlTransactionItems, id);
+            rowsAffected = jdbcTemplate.update(sqlTransaction, id);
+            if(rowsAffected == 0){
+                throw new DaoException("Transaction id not found");
+            }
+        }catch (DataIntegrityViolationException e){
+            throw new DaoException("Data Integrity Violation");
+        }catch (CannotGetJdbcConnectionException e){
+            throw new DaoException("Unable to connect to server");
+        }
+        return rowsAffected;
     }
 
     public static TransactionItem mapTransItem (SqlRowSet results){
