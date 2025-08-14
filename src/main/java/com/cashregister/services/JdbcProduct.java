@@ -30,24 +30,41 @@ public class JdbcProduct implements ProductDao {
         product.setQuantity(results.getDouble("quantity"));
         return product;
     }
-    
     @Override
-    public List<Product> getProductsByname(String name) {
-        String sql = "SELECT * FROM product WHERE name LIKE ?;";
+    public List<Product> getAllProducts() {
         List<Product> products = new ArrayList<>();
-        try{
-            SqlRowSet results = jdbcTemplate.queryForRowSet(sql, "%"+ name +"%");
-            while (results.next()) {
-                Product product = mapRowToProduct(results);
-                products.add(product);
-            }
-        }catch (CannotGetJdbcConnectionException e){
+        String sql = "SELECT * FROM product ORDER BY name ASC;";
+        try {
+            SqlRowSet results = jdbcTemplate.queryForRowSet(sql);
+             while(results.next()){
+                 Product product = mapRowToProduct(results);
+                 products.add(product);
+             }
+        } catch (CannotGetJdbcConnectionException e) {
             throw new DaoException("Unable to connect to server");
-        }catch (DataIntegrityViolationException e){
+        } catch (DataIntegrityViolationException e) {
             throw new DaoException("Data Integrity Violation");
         }
         return products;
     }
+    @Override
+    public List<Product> getProductsByname(String name) {
+        String sql = "SELECT * FROM product WHERE LOWER(name) LIKE LOWER(?)";
+        List<Product> products = new ArrayList<>();
+        try {
+            SqlRowSet results = jdbcTemplate.queryForRowSet(sql, "%" + name + "%");
+            while (results.next()) {
+                Product product = mapRowToProduct(results);
+                products.add(product);
+            }
+        } catch (CannotGetJdbcConnectionException e) {
+            throw new DaoException("Unable to connect to server");
+        } catch (DataIntegrityViolationException e) {
+            throw new DaoException("Data Integrity Violation");
+        }
+        return products;
+    }
+
 
     @Override
     public Product getProductBySku(String sku) {
@@ -108,13 +125,13 @@ public class JdbcProduct implements ProductDao {
     }
 
     @Override
-    public int deleteProductById(int id) {
+    public int deleteProductById(String sku) {
         String deleteFromTransaction = "DELETE FROM transaction_item WHERE product_sku = ?;";
         String deleteFromInventory = "DELETE FROM product WHERE sku  = ?;";
         int rowsAffected = 0;
          try {
-             jdbcTemplate.update(deleteFromTransaction, id);
-             rowsAffected = jdbcTemplate.update(deleteFromInventory, id);
+             jdbcTemplate.update(deleteFromTransaction, sku);
+             rowsAffected = jdbcTemplate.update(deleteFromInventory, sku);
 
          }catch (CannotGetJdbcConnectionException e){
              throw new DaoException("Unable to connect to server");

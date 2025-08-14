@@ -33,8 +33,7 @@ public class JdbcInventory implements InventoryDao {
     try{
       SqlRowSet results = jdbcTemplate.queryForRowSet(sql);
       while(results.next()){
-          Product product = new Product();
-          JdbcProduct.mapRowToProduct(results);
+          Product product = JdbcProduct.mapRowToProduct(results);
           inventory.put(product,product.getQuantity());
       }
     }catch (CannotGetJdbcConnectionException e){
@@ -63,8 +62,12 @@ public class JdbcInventory implements InventoryDao {
 
     @Override
     public int getTotalItems() {
-
-        return getInventory().size();
+        String sql = "SELECT COUNT(*) FROM product;";
+        try {
+            return jdbcTemplate.queryForObject(sql, Integer.class);
+        } catch (CannotGetJdbcConnectionException e) {
+            throw new DaoException("Unable to connect to server");
+        }
     }
 
 }
