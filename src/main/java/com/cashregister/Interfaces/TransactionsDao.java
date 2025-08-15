@@ -10,6 +10,8 @@ import java.util.Date;
 import java.util.HashMap;
 
 public interface TransactionsDao {
+    List<Transaction> getTransactions();
+    List<Transaction> getTransactionsByTotalAndDate(BigDecimal total, Date transaction_date);
    Transaction getTransactionById(int id);
    List<Transaction> getTransactionsByTotal(BigDecimal total);
    List<Transaction> getTransactionsByDate(Date date);

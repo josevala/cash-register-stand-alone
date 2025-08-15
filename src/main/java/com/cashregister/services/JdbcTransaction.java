@@ -2,17 +2,14 @@ package com.cashregister.services;
 
 import com.cashregister.Interfaces.TransactionsDao;
 import com.cashregister.models.DaoException;
-import com.cashregister.models.Product;
 import com.cashregister.models.Transaction;
 import com.cashregister.models.TransactionItem;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
-
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
@@ -58,6 +55,25 @@ public class JdbcTransaction implements TransactionsDao {
             }
      return  transaction;
     }
+
+    @Override
+    public List<Transaction> getTransactions() {
+        List<Transaction> transactions = new ArrayList<>();
+        String sql = "SELECT transaction_id FROM transactions ORDER BY transaction_date;";
+         try{
+             SqlRowSet transactionResults = jdbcTemplate.queryForRowSet(sql);
+             while(transactionResults.next()){
+                 Transaction transaction = getTransactionById(transactionResults.getInt("transaction_id"));
+                 transactions.add(transaction);
+             }
+         }catch (CannotGetJdbcConnectionException e){
+            throw new DaoException("Unable to connect to server");
+        }catch (DataIntegrityViolationException e){
+            throw new DaoException("Data Integrity Violation");
+        }
+         return transactions;
+    }
+
     @Override
     public List<Transaction> getTransactionsByTotal(BigDecimal total) {
        List<Transaction> transactions = new ArrayList<>();
@@ -77,7 +93,26 @@ public class JdbcTransaction implements TransactionsDao {
        }
         return transactions;
     }
+    @Override
+    public List<Transaction> getTransactionsByTotalAndDate(BigDecimal total, Date date){
+        List<Transaction> transactions = new ArrayList<>();
+         String sql = "SELECT transaction_id FROM transactions WHERE transaction_total = ? AND transaction_date = ?;";
+        try{
+            SqlRowSet results = jdbcTemplate.queryForRowSet(sql,total, date);
+            while(results.next()){
+                Transaction transaction = new Transaction();
+                transaction = getTransactionById(results.getInt("transaction_id"));
+                transactions.add(transaction);
+            }
 
+        } catch (CannotGetJdbcConnectionException e){
+            throw new DaoException("Unable to connect to server");
+        }catch (DataIntegrityViolationException e){
+            throw new DaoException("Data Integrity Violation");
+        }
+        return  transactions;
+
+    }
 
     @Override
     public List<Transaction> getTransactionsByDate(Date date) {
