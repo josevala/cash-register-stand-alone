@@ -1,0 +1,30 @@
+-- Drop in dependency order
+DROP TABLE IF EXISTS transaction_item;
+DROP TABLE IF EXISTS transactions;
+DROP TABLE IF EXISTS product;
+
+-- Product catalog
+CREATE TABLE product (
+    sku TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    price NUMERIC(9,2) NOT NULL,
+    quantity NUMERIC(9,2) NOT NULL,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Transactions table
+CREATE TABLE transactions (
+    transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    transaction_total NUMERIC(12,2) NOT NULL,
+    transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Items in a transaction
+CREATE TABLE transaction_item (
+    transaction_id INTEGER NOT NULL,
+      product_sku TEXT NOT NULL,
+      quantity NUMERIC(9,2) NOT NULL,
+      PRIMARY KEY (transaction_id, product_sku),
+      FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id),
+      FOREIGN KEY (product_sku) REFERENCES product(sku)
+  );

@@ -32,7 +32,7 @@ public class JdbcTransaction implements TransactionsDao {
         HashMap<TransactionItem, Double> transactionProducts = new HashMap<>();
         String sqlTransaction = "SELECT * FROM transactions WHERE transactions.transaction_id = ?";
         String sqlProducts = "SELECT p.sku, p.name,p.price, t.transaction_id, ti.quantity FROM product p JOIN transaction_item ti ON p.sku = ti.product_sku" +
-                " JOIN transactions t ON ti.id = t.transaction_id WHERE t.transaction_id = ? ;";
+                " JOIN transactions t ON ti.transaction_id = t.transaction_id WHERE t.transaction_id = ? ;";
         BigDecimal total =  new BigDecimal(0);
             try{
                 SqlRowSet productResults =  jdbcTemplate.queryForRowSet(sqlProducts, id);
@@ -156,7 +156,7 @@ public class JdbcTransaction implements TransactionsDao {
      return transaction1;
     }
     public void  addTransactionItem(TransactionItem transactionItem){
-        String sqlTransactionItems = "INSERT INTO transaction_item ( id, product_sku, quantity ) VALUES (?, ?, ?);";
+        String sqlTransactionItems = "INSERT INTO transaction_item ( transaction_id, product_sku, quantity ) VALUES (?, ?, ?);";
          try{
              jdbcTemplate.update(sqlTransactionItems, transactionItem.getTransactionId(), transactionItem.getSku(), transactionItem.getQuantity());
          }catch (DataIntegrityViolationException e){
@@ -170,7 +170,7 @@ public class JdbcTransaction implements TransactionsDao {
     public int deleteTransactionById(int id) {
         int rowsAffected = 0;
         String sqlTransaction = "DELETE FROM transactions WHERE transaction_id = ?;";
-        String  sqlTransactionItems = "DELETE FROM transaction_item WHERE id = ?;";
+        String  sqlTransactionItems = "DELETE FROM transaction_item WHERE transaction_id = ?;";
         try{
             jdbcTemplate.update(sqlTransactionItems, id);
             rowsAffected = jdbcTemplate.update(sqlTransaction, id);
